@@ -9,7 +9,7 @@ use pocketmine\utils\Config;
 use pocketmine\world\Position;
 use pocketmine\Server;
 
-class LobbySystem extends PluginBase implements Listener {
+class Main extends PluginBase implements Listener {
 
     public function onEnable(): void {
         $this->saveResource("spawn.yml");
