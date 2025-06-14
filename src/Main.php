@@ -11,30 +11,41 @@ use pocketmine\Server;
 
 class LobbySystem extends PluginBase implements Listener {
 
-    public Config $config;
+    private Config $config;
+    private ?Position $spawn = null;
 
     public function onEnable(): void {
         @mkdir($this->getDataFolder());
-        $this->saveResource("spawn.yml");
+        if (!file_exists($this->getDataFolder() . "spawn.yml")) {
+            $this->saveResource("spawn.yml");
+        }
         $this->config = new Config($this->getDataFolder() . "spawn.yml", Config::YAML);
-        $this->getServer()->getPluginManager()->registerEvents($this, $this);
-    }
-
-    public function onJoin(PlayerJoinEvent $event): void {
         $worldName = $this->config->get("spawn-world", "");
         $posString = $this->config->get("spawn-position", "");
         $parts = explode(" ", $posString);
-        if(count($parts) !== 3) return;
+        if (count($parts) !== 3) {
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+            return;
+        }
         $x = floatval($parts[0]);
         $y = floatval($parts[1]);
         $z = floatval($parts[2]);
         $worldManager = Server::getInstance()->getWorldManager();
-        if(!$worldManager->isWorldLoaded($worldName)) {
+        if (!$worldManager->isWorldLoaded($worldName)) {
             $worldManager->loadWorld($worldName);
         }
         $world = $worldManager->getWorldByName($worldName);
-        if($world === null) return;
-        $player = $event->getPlayer();
-        $player->teleport(new Position($x, $y, $z, $world));
+        if ($world === null) {
+            $this->getServer()->getPluginManager()->disablePlugin($this);
+            return;
+        }
+        $this->spawn = new Position($x, $y, $z, $world);
+        $this->getServer()->getPluginManager()->registerEvents($this, $this);
+    }
+
+    public function onJoin(PlayerJoinEvent $event): void {
+        if ($this->spawn !== null) {
+            $event->getPlayer()->teleport($this->spawn);
+        }
     }
 }
