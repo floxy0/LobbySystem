@@ -11,7 +11,7 @@ use pocketmine\Server;
 
 class LobbySystem extends PluginBase implements Listener {
 
-    private Config $config;
+    public Config $config;
 
     public function onEnable(): void {
         @mkdir($this->getDataFolder());
