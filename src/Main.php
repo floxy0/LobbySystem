@@ -9,11 +9,11 @@ use pocketmine\utils\Config;
 use pocketmine\world\Position;
 use pocketmine\Server;
 
-class Main extends PluginBase implements Listener {
+class LobbySystem extends PluginBase implements Listener {
 
     public function onEnable(): void {
         $this->saveResource("spawn.yml");
-        $config = new Config($this->getResourcePath() . "spawn.yml", Config::YAML);
+        $config = new Config($this->getDataFolder() . "spawn.yml", Config::YAML);
         $worldName = $config->get("spawn-world", "");
         $posString = $config->get("spawn-position", "");
         $parts = explode(" ", $posString);
