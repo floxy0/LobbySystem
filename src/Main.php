@@ -11,17 +11,11 @@ use pocketmine\Server;
 
 class LobbySystem extends PluginBase implements Listener {
 
-    private Config $config;
-    private ?Position $spawn = null;
-
     public function onEnable(): void {
-        @mkdir($this->getDataFolder());
-        if (!file_exists($this->getDataFolder() . "spawn.yml")) {
-            $this->saveResource("spawn.yml");
-        }
-        $this->config = new Config($this->getDataFolder() . "spawn.yml", Config::YAML);
-        $worldName = $this->config->get("spawn-world", "");
-        $posString = $this->config->get("spawn-position", "");
+        $this->saveResource("spawn.yml");
+        $config = new Config($this->getResourcePath() . "spawn.yml", Config::YAML);
+        $worldName = $config->get("spawn-world", "");
+        $posString = $config->get("spawn-position", "");
         $parts = explode(" ", $posString);
         if (count($parts) !== 3) {
             $this->getServer()->getPluginManager()->disablePlugin($this);
@@ -39,13 +33,26 @@ class LobbySystem extends PluginBase implements Listener {
             $this->getServer()->getPluginManager()->disablePlugin($this);
             return;
         }
-        $this->spawn = new Position($x, $y, $z, $world);
-        $this->getServer()->getPluginManager()->registerEvents($this, $this);
+        $this->getServer()->getPluginManager()->registerEvents(new class($x, $y, $z, $world) implements Listener {
+            private float $x;
+            private float $y;
+            private float $z;
+            private $world;
+
+            public function __construct(float $x, float $y, float $z, $world) {
+                $this->x = $x;
+                $this->y = $y;
+                $this->z = $z;
+                $this->world = $world;
+            }
+
+            public function onJoin(PlayerJoinEvent $event): void {
+                $event->getPlayer()->teleport(new Position($this->x, $this->y, $this->z, $this->world));
+            }
+        }, $this);
     }
 
-    public function onJoin(PlayerJoinEvent $event): void {
-        if ($this->spawn !== null) {
-            $event->getPlayer()->teleport($this->spawn);
-        }
+    private function getResourcePath(): string {
+        return $this->getFile() . "resources/";
     }
 }
