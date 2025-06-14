@@ -1,0 +1,5 @@
+name: LobbySystem
+version: 0.0.1
+main: floxy\LobbySystem\Main
+api: 5.28.2
+src-namespace-prefix: floxy\LobbySystem
