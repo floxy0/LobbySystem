@@ -18,6 +18,9 @@ use pocketmine\world\Position;
 
 class Main extends PluginBase implements Listener{
 
+    /** @var array<string, int> */
+    private array $cooldowns = [];
+
     public function onEnable(): void{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
@@ -36,7 +39,21 @@ class Main extends PluginBase implements Listener{
     public function onInteract(PlayerInteractEvent $event): void{
         $player = $event->getPlayer();
         $item = $event->getItem();
+        $name = strtolower($player->getName());
+
         if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
+            $now = time();
+
+            if(isset($this->cooldowns[$name]) && $this->cooldowns[$name] > $now){
+                return;
+            }
+
+            if(!$player->isOnGround()){
+                return;
+            }
+
+            $this->cooldowns[$name] = $now + 3;
+
             $dir = $player->getDirectionVector()->multiply(1.5);
             $motion = new Vector3($dir->x, $dir->y + 0.8, $dir->z);
             $player->setMotion($motion);
