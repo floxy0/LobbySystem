@@ -10,7 +10,6 @@ use pocketmine\event\player\PlayerJoinEvent;
 use pocketmine\event\player\PlayerInteractEvent;
 use pocketmine\event\player\PlayerDropItemEvent;
 use pocketmine\event\inventory\InventoryTransactionEvent;
-use pocketmine\item\ItemFactory;
 use pocketmine\item\VanillaItems;
 use pocketmine\player\Player;
 use pocketmine\math\Vector3;
@@ -38,8 +37,9 @@ class Main extends PluginBase implements Listener{
         $player = $event->getPlayer();
         $item = $event->getItem();
         if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
-            $direction = $player->getDirectionVector()->multiply(1.5)->add(new Vector3(0, 0.8, 0));
-            $player->setMotion($direction);
+            $dir = $player->getDirectionVector()->multiply(1.5);
+            $motion = new Vector3($dir->x, $dir->y + 0.8, $dir->z);
+            $player->setMotion($motion);
         }
     }
 
