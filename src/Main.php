@@ -18,9 +18,6 @@ use pocketmine\world\Position;
 
 class Main extends PluginBase implements Listener{
 
-    /** @var array<string, int> */
-    private array $cooldowns = [];
-
     public function onEnable(): void{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
@@ -29,7 +26,12 @@ class Main extends PluginBase implements Listener{
         $player = $event->getPlayer();
         $world = Server::getInstance()->getWorldManager()->getWorldByName("lobby");
         if($world !== null){
-            $player->teleport(new Position($world->getSpawnLocation()->getX(), $world->getSpawnLocation()->getY(), $world->getSpawnLocation()->getZ(), $world));
+            $player->teleport(new Position(
+                $world->getSpawnLocation()->getX(),
+                $world->getSpawnLocation()->getY(),
+                $world->getSpawnLocation()->getZ(),
+                $world
+            ));
         }
         $player->getInventory()->clearAll();
         $feather = VanillaItems::FEATHER()->setCustomName("§eBoost §8(right-click)");
@@ -39,21 +41,9 @@ class Main extends PluginBase implements Listener{
     public function onInteract(PlayerInteractEvent $event): void{
         $player = $event->getPlayer();
         $item = $event->getItem();
-        $name = strtolower($player->getName());
 
-        if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
-            $now = time();
-
-            if(isset($this->cooldowns[$name]) && $this->cooldowns[$name] > $now){
-                return;
-            }
-
-            if(!$player->isOnGround()){
-                return;
-            }
-
-            $this->cooldowns[$name] = $now + 3;
-
+        if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() &&
+           $item->getCustomName() === "§eBoost §8(right-click)"){
             $dir = $player->getDirectionVector()->multiply(1.5);
             $motion = new Vector3($dir->x, $dir->y + 0.8, $dir->z);
             $player->setMotion($motion);
@@ -62,7 +52,8 @@ class Main extends PluginBase implements Listener{
 
     public function onDrop(PlayerDropItemEvent $event): void{
         $item = $event->getItem();
-        if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
+        if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() &&
+           $item->getCustomName() === "§eBoost §8(right-click)"){
             $event->cancel();
         }
     }
@@ -70,7 +61,8 @@ class Main extends PluginBase implements Listener{
     public function onInventoryMove(InventoryTransactionEvent $event): void{
         foreach($event->getTransaction()->getActions() as $action){
             $item = $action->getSourceItem();
-            if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
+            if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() &&
+               $item->getCustomName() === "§eBoost §8(right-click)"){
                 $event->cancel();
                 break;
             }
