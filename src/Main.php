@@ -1,46 +1,62 @@
 <?php
 
-namespace floxy\LobbySystem;
+declare(strict_types=1);
+
+namespace Floxy\LobbySystem;
 
 use pocketmine\plugin\PluginBase;
 use pocketmine\event\Listener;
 use pocketmine\event\player\PlayerJoinEvent;
-use pocketmine\utils\Config;
-use pocketmine\world\Position;
-use pocketmine\world\World;
+use pocketmine\event\player\PlayerInteractEvent;
+use pocketmine\event\player\PlayerDropItemEvent;
+use pocketmine\event\inventory\InventoryTransactionEvent;
+use pocketmine\item\ItemFactory;
+use pocketmine\item\VanillaItems;
+use pocketmine\player\Player;
+use pocketmine\math\Vector3;
 use pocketmine\Server;
+use pocketmine\world\Position;
 
-class Main extends PluginBase implements Listener {
+class Main extends PluginBase implements Listener{
 
-    private ?float $x = null;
-    private ?float $y = null;
-    private ?float $z = null;
-    private ?World $world = null;
-    private bool $active = false;
-
-    public function onEnable(): void {
-        $this->saveResource("spawn.yml");
-        $config = new Config($this->getDataFolder() . "spawn.yml", Config::YAML);
-        $worldName = $config->get("spawn-world", "");
-        $posString = $config->get("spawn-position", "");
-        $parts = explode(" ", $posString);
-        if (count($parts) !== 3) return;
-        $this->x = floatval($parts[0]);
-        $this->y = floatval($parts[1]);
-        $this->z = floatval($parts[2]);
-        $worldManager = Server::getInstance()->getWorldManager();
-        if (!$worldManager->isWorldLoaded($worldName)) {
-            $worldManager->loadWorld($worldName);
-        }
-        $this->world = $worldManager->getWorldByName($worldName);
-        if ($this->world === null) return;
-        $this->active = true;
+    public function onEnable(): void{
         $this->getServer()->getPluginManager()->registerEvents($this, $this);
     }
 
-    public function onJoin(PlayerJoinEvent $event): void {
-        if ($this->active) {
-            $event->getPlayer()->teleport(new Position($this->x, $this->y, $this->z, $this->world));
+    public function onJoin(PlayerJoinEvent $event): void{
+        $player = $event->getPlayer();
+        $world = Server::getInstance()->getWorldManager()->getWorldByName("lobby");
+        if($world !== null){
+            $player->teleport(new Position($world->getSpawnLocation()->getX(), $world->getSpawnLocation()->getY(), $world->getSpawnLocation()->getZ(), $world));
+        }
+        $player->getInventory()->clearAll();
+        $feather = VanillaItems::FEATHER()->setCustomName("§eBoost §8(right-click)");
+        $player->getInventory()->setItem(0, $feather);
+    }
+
+    public function onInteract(PlayerInteractEvent $event): void{
+        $player = $event->getPlayer();
+        $item = $event->getItem();
+        if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
+            $direction = $player->getDirectionVector()->multiply(1.5)->add(new Vector3(0, 0.8, 0));
+            $player->setMotion($direction);
+        }
+    }
+
+    public function onDrop(PlayerDropItemEvent $event): void{
+        $item = $event->getItem();
+        if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
+            $event->cancel();
+        }
+    }
+
+    public function onInventoryMove(InventoryTransactionEvent $event): void{
+        foreach($event->getTransaction()->getActions() as $action){
+            $item = $action->getSourceItem();
+            if($item->getTypeId() === VanillaItems::FEATHER()->getTypeId() && $item->getCustomName() === "§eBoost §8(right-click)"){
+                $event->cancel();
+                break;
+            }
         }
     }
 }
